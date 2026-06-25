@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Assistance | Brand Asset Manager</title>
+    <style>
+        :root {
+            --ua-blue: #0054A6;
+            --ua-green: #8DC63F;
+            --ua-dark: #231F20;
+            --ua-light: #F4F6F9;
+            --ua-border: #D1D5DB;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--ua-light);
+            color: var(--ua-dark);
+            margin: 0;
+            padding: 0;
+            display: block;
+        }
+
+        header {
+            background-color: var(--ua-blue);
+            color: white;
+            width: 100%;
+            padding: 20px 0;
+            text-align: center;
+            border-bottom: 4px solid var(--ua-green);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 650px;
+            width: 90%;
+            background: white;
+            margin: 40px auto;
+            padding: 35px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: var(--ua-blue);
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .upload-box {
+            border: 2px dashed #A0AEC0;
+            padding: 40px 20px;
+            border-radius: 6px;
+            background-color: #FAFAFA;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-box:hover {
+            border-color: var(--ua-blue);
+            background-color: #F0F4F8;
+        }
+
+        .upload-box p {
+            margin: 0;
+            font-size: 15px;
+            color: #4A5568;
+        }
+
+        .upload-box span {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background-color: var(--ua-green);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover {
+            background-color: #7cb334;
+        }
+
+        .preview-container {
+            margin-top: 30px;
+            display: none;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 25px;
+        }
+
+        .preview-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #4A5568;
+        }
+
+        .canvas-wrapper {
+            background-color: #333; 
+            background-image: linear-gradient(45deg, #252525 25%, transparent 25%), 
+                              linear-gradient(-45deg, #252525 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #252525 75%), 
+                              linear-gradient(-45deg, transparent 75%, #252525 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            width: 250px;
+            height: 150px;
+            margin: 0 auto;
+            border-radius: 4px;
+            border: 2px solid #1A1A1A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Universal Assistance | Brand Asset Manager</h1>
+    </header>
+
+    <div class="container">
+        <h3>Adaptador Automatizado de Logos</h3>
+        <p class="description">
+            Subí un logo en formato de imagen (PNG, JPG o JPEG). El sistema lo redimensionará automáticamente a <strong>250px de ancho por 150px de alto</strong>, removerá fondos claros para dejarlo transparente y convertirá todo el isotipo/logotipo a <strong>blanco puro</strong>.
+        </p>
+
+        <div class="upload-box" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <p id="uploadText">Arrastrá tu logo acá o hacé clic para examinar archivos</p>
+            <span>Formatos aceptados: PNG, JPG, JPEG</span>
+            <input type="file" id="fileInput" accept="image/png, image/jpeg, image/jpg">
+        </div>
+
+        <div class="preview-container" id="previewContainer">
+            <div class="preview-title">Vista previa del logo adaptado (Fondo de contraste):</div>
+            <div class="canvas-wrapper">
+                <canvas id="logoCanvas" width="250" height="150"></canvas>
+            </div>
+            <button class="btn" id="downloadBtn">Descargar PNG Transparente</button>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const previewContainer = document.getElementById('previewContainer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const canvas = document.getElementById('logoCanvas');
+        const ctx = canvas.getContext('2d');
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Soporte para Arrastrar y Soltar (Drag & Drop)
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--ua-blue)';
+            dropZone.style.backgroundColor = '#F0F4F8';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#A0AEC0';
+            dropZone.style.backgroundColor = '#FAFAFA';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#A0AEC0';
+            dropZone.style.backgroundColor = '#FAFAFA';
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    processLogo(img);
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function processLogo(img) {
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const maxWidth = 250;
+            const maxHeight = 150;
+            let width = img.width;
+            let height = img.height;
+
+            // Ajuste proporcional (proporciones del logo intactas)
+            const ratioX = maxWidth / width;
+            const ratioY = maxHeight / height;
+            const ratio = Math.min(ratioX, ratioY);
+            
+            width = width * ratio;
+            height = height * ratio;
+
+            // Centrar horizontal y verticalmente
+            const x = (maxWidth - width) / 2;
+            const y = (maxHeight - height) / 2;
+
+            ctx.drawImage(img, x, y, width, height);
+
+            // Filtro de color píxel por píxel para pasar a blanco y manejar transparencias de JPGs
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i];
+                let g = data[i+1];
+                let b = data[i+2];
+                let alpha = data[i+3];
+
+                if (alpha > 10) {
+                    // Si el fondo original es blanco o extremadamente claro (común en JPG), lo volvemos transparente
+                    if (r > 235 && g > 235 && b > 235) {
+                        data[i+3] = 0; 
+                    } else {
+                        // Cambiar cualquier color o silueta a blanco absoluto
+                        data[i] = 255;   
+                        data[i+1] = 255; 
+                        data[i+2] = 255; 
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            previewContainer.style.display = 'block';
+        }
+
+        downloadBtn.addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.download = 'logo-universal-assistance-blanco.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
